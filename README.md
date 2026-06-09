@@ -1,86 +1,23 @@
 # github_repository_list_app
 
-Production-quality Flutter interview assignment that searches public GitHub
-repositories, shows repository details, and stores local favorites.
+Flutter application for searching public GitHub repositories, viewing repository
+details, and managing local favorites.
 
-## Overview
+## Requirements
 
-The app has two bottom navigation tabs:
+- Flutter 3.41.x or higher
+- Android and iOS support
+- No GitHub Authorization header
 
-- Search: submit a keyword to search GitHub repositories, browse persisted search history, paginate results, favorite/unfavorite, and open detail.
-- Star: list locally favorited repositories, remove favorites, and open detail.
+## Packages
 
-Repository Detail is pushed on top of either tab and is not part of the bottom
-navigation. It fetches fresh detail data from GitHub and shows `full_name`,
-`owner.avatar_url`, `subscribers_count`, and the synchronized favorite action.
+- `http`: GitHub REST API requests
+- `shared_preferences`: local favorites and search history persistence
+- `flutter_riverpod`: state management and dependency injection
 
-## Architecture
+No additional third-party packages are used.
 
-The code uses a simple MVVM-style Riverpod structure with Repository interfaces.
-It avoids a full multi-layer Clean Architecture tree because the app has a small
-feature surface.
-
-- `lib/models`: shared immutable app models used by multiple screens.
-- `lib/data`: concrete GitHub API and local `shared_preferences` storage classes.
-- `lib/repositories`: Repository interfaces and implementations that isolate data access.
-- `lib/providers`: app-wide dependency providers such as SharedPreferences, HTTP, storage, and repositories.
-- `lib/config`: app-wide configuration values.
-- `lib/features/search`: search screen, search state, search controller, and search-history state/controller.
-- `lib/features/favorites`: favorite list screen, favorite state, controller, and provider.
-- `lib/features/detail`: repository detail screen, detail state, controller, and provider.
-- `lib/widgets`: shared UI widgets.
-- `lib/utils`: shared parsing helpers.
-
-Feature controllers depend on Repository interfaces through Riverpod providers,
-not directly on the GitHub API client or SharedPreferences storage classes.
-Repository implementations adapt those interfaces to GitHub REST API and local
-storage.
-
-Search is intentionally submitted by the keyboard search action or by selecting
-a recent search record. Typing in the field does not call the GitHub API.
-
-## Package Usage
-
-- `http`: calls GitHub REST endpoints.
-- `shared_preferences`: persists local favorite repositories and recent search keywords.
-- `flutter_riverpod`: single source of truth for search, detail, and favorite state.
-
-No GitHub authorization header is used, and no GitHub Star API calls are made.
-
-## GitHub API
-
-Search uses:
-
-```text
-GET https://api.github.com/search/repositories?q={query}&page={page}&per_page=30
-```
-
-Detail uses:
-
-```text
-GET https://api.github.com/repos/{owner}/{repo}
-```
-
-The API layer handles network timeouts, non-2xx responses, malformed JSON, and
-unexpected response shapes by surfacing readable error states in the UI.
-
-## State Synchronization
-
-Favorites are managed by `favoriteProvider`, an `AsyncNotifier` backed by
-`shared_preferences`. Search, Star, and Detail screens all watch the same
-provider, so changes propagate immediately:
-
-- Favorite from Search updates Star.
-- Favorite from Detail updates Search and Star.
-- Unfavorite from Star updates Detail and Search.
-
-Only these fields are persisted locally:
-
-- `id`
-- `full_name`
-- `owner.avatar_url`
-
-## Build Instructions
+## How To Run
 
 ```sh
 flutter pub get
@@ -88,4 +25,120 @@ flutter run
 flutter test
 ```
 
-The project supports Android and iOS with Flutter 3.41.x or higher.
+## Features
+
+- Bottom navigation with Search and Star tabs
+- Repository search by submitted keyword
+- Search home, loading, empty, and error states
+- Search history stored in `shared_preferences`
+- Infinite scroll using GitHub Search API pagination
+- Pull-to-refresh for search results
+- Repository detail screen
+- Local favorite add/remove without GitHub Star API
+- Favorite state synchronization across Search, Detail, and Star screens
+- Favorites persist across app restart
+
+## GitHub REST API
+
+Repository Search API:
+
+```text
+GET https://api.github.com/search/repositories?q={query}&page={page}&per_page=30
+```
+
+Repository Detail API:
+
+```text
+GET https://api.github.com/repos/{owner}/{repo}
+```
+
+The app handles non-2xx responses, timeouts, network errors, JSON decode errors,
+and unexpected response shapes.
+
+## Project Structure
+
+```text
+lib/
+  main.dart
+  app.dart
+  main_screen.dart
+  config/
+  models/
+  network/
+  data/
+  repositories/
+  providers/
+  features/
+    search/
+    favorites/
+    detail/
+  widgets/
+  utils/
+```
+
+Main responsibilities:
+
+- `config`: app and GitHub API constants
+- `models`: shared immutable models
+- `network`: low-level HTTP/JSON request utility
+- `data`: GitHub API client and local storage classes
+- `repositories`: repository interfaces and implementations
+- `providers`: Riverpod dependency providers
+- `features/search`: search UI, state, controllers, and search history
+- `features/favorites`: favorite list UI, state, and controller
+- `features/detail`: detail UI, state, and controller
+- `widgets`: shared UI components
+- `utils`: shared helpers
+
+## Key Implementation Points
+
+- Search requests are triggered by the keyboard search action or by selecting a search history item, not on every text change.
+- Search history keeps the latest configured number of records.
+- Search pagination requests one page at a time and prevents duplicate next-page requests.
+- Favorites are stored locally with only:
+  - `id`
+  - `full_name`
+  - `owner.avatar_url`
+- `favoriteProvider` is the single source of truth for favorite state.
+- `detailProvider` is `autoDispose` because detail screens are pushed pages.
+
+## `full_name` Display
+
+The task requires displaying `full_name`.
+
+GitHub repository `full_name` has this format:
+
+```text
+owner/repository
+```
+
+The app keeps `full_name` as the source value and splits it by `/` only for UI
+display:
+
+```text
+owner
+repository
+```
+
+This is used in repository list items and the detail screen.
+
+Reason:
+
+- It satisfies the task requirement to use `full_name`.
+- It avoids adding unnecessary display fields.
+- It reduces the chance of long `owner/repository` text overflowing the screen.
+- It improves readability and visual hierarchy.
+
+## Tests
+
+The project includes unit and widget tests for:
+
+- favorite add/remove logic
+- low-level API client success and error handling
+- search history limit
+- search pagination and stale-response handling
+- repository tile display and tap behavior
+- search home state
+- search history focus behavior
+- search error retry
+- detail error retry
