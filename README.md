@@ -92,7 +92,8 @@ and unexpected response shapes.
 lib/
   main.dart
   app.dart
-  main_screen.dart
+  navigation/
+    main_screen.dart
   config/
   models/
   network/
@@ -110,6 +111,7 @@ lib/
 Main responsibilities:
 
 - `config`: app and GitHub API constants
+- `navigation`: app-level navigation shell
 - `models`: shared immutable models
 - `network`: low-level HTTP/JSON request utility
 - `data`: GitHub API client and local storage classes
@@ -238,7 +240,8 @@ GET https://api.github.com/repos/{owner}/{repo}
 lib/
   main.dart
   app.dart
-  main_screen.dart
+  navigation/
+    main_screen.dart
   config/
   models/
   network/
@@ -256,6 +259,7 @@ lib/
 主な役割:
 
 - `config`: アプリと GitHub API の定数
+- `navigation`: アプリ全体のナビゲーション shell
 - `models`: 共通の immutable モデル
 - `network`: 低レベルの HTTP/JSON リクエスト処理
 - `data`: GitHub API クライアントとローカルストレージクラス

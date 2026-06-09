@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:github_repository_list_app/main_screen.dart';
+import 'package:github_repository_list_app/navigation/main_screen.dart';
 
 class GithubRepositoryListApp extends StatelessWidget {
   const GithubRepositoryListApp({super.key});
