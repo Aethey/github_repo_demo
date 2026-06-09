@@ -1,17 +1,17 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-
 import 'package:github_repository_list_app/config/github_api_config.dart';
 import 'package:github_repository_list_app/models/repository_detail.dart';
 import 'package:github_repository_list_app/models/repository_search_result.dart';
 import 'package:github_repository_list_app/models/repository_summary.dart';
+import 'package:github_repository_list_app/network/api_client.dart';
 
 class GithubApiClient {
-  GithubApiClient(this._client);
+  GithubApiClient() : _apiClient = ApiClient();
 
-  final http.Client _client;
+  final ApiClient _apiClient;
+
+  void close() {
+    _apiClient.close();
+  }
 
   Future<RepositorySearchResult> searchRepositories({
     required String query,
@@ -36,13 +36,16 @@ class GithubApiClient {
       },
     );
 
-    final response = await _get(uri);
-    final decoded = _decodeObject(response.body);
+    final decoded = await _apiClient.getJsonObject(
+      uri,
+      headers: GithubApiConfig.headers,
+      timeout: GithubApiConfig.requestTimeout,
+    );
     final rawItems = decoded['items'];
     final rawTotalCount = decoded['total_count'];
 
     if (rawItems is! List || rawTotalCount is! num) {
-      throw const GithubApiException('Unexpected search response format.');
+      throw const ApiClientException('Unexpected search response format.');
     }
 
     try {
@@ -60,11 +63,11 @@ class GithubApiClient {
         totalCount: rawTotalCount.toInt(),
       );
     } on FormatException catch (error) {
-      throw GithubApiException(
+      throw ApiClientException(
         'Failed to parse GitHub search response: ${error.message}',
       );
     } on TypeError {
-      throw const GithubApiException('Failed to parse GitHub search response.');
+      throw const ApiClientException('Failed to parse GitHub search response.');
     }
   }
 
@@ -90,83 +93,22 @@ class GithubApiClient {
       ],
     );
 
-    final response = await _get(uri);
-    final decoded = _decodeObject(response.body);
+    final decoded = await _apiClient.getJsonObject(
+      uri,
+      headers: GithubApiConfig.headers,
+      timeout: GithubApiConfig.requestTimeout,
+    );
 
     try {
       return RepositoryDetail.fromJson(decoded);
     } on FormatException catch (error) {
-      throw GithubApiException(
+      throw ApiClientException(
         'Failed to parse repository detail response: ${error.message}',
       );
     } on TypeError {
-      throw const GithubApiException(
+      throw const ApiClientException(
         'Failed to parse repository detail response.',
       );
     }
   }
-
-  Future<http.Response> _get(Uri uri) async {
-    late final http.Response response;
-    try {
-      response = await _client
-          .get(uri, headers: GithubApiConfig.headers)
-          .timeout(GithubApiConfig.requestTimeout);
-    } on TimeoutException {
-      throw const GithubApiException('GitHub request timed out.');
-    } on http.ClientException catch (error) {
-      throw GithubApiException('Network error: ${error.message}');
-    } on Object {
-      throw const GithubApiException('Network error while contacting GitHub.');
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw GithubApiException(
-        _messageForNonSuccess(response),
-        statusCode: response.statusCode,
-      );
-    }
-
-    return response;
-  }
-
-  Map<String, dynamic> _decodeObject(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      if (decoded is Map<String, dynamic>) {
-        return decoded;
-      }
-      throw const FormatException('Response root is not an object.');
-    } on FormatException catch (error) {
-      throw GithubApiException(
-        'Failed to decode GitHub response: ${error.message}',
-      );
-    }
-  }
-
-  String _messageForNonSuccess(http.Response response) {
-    try {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map<String, dynamic>) {
-        final message = decoded['message'];
-        if (message is String && message.isNotEmpty) {
-          return 'GitHub API error (${response.statusCode}): $message';
-        }
-      }
-    } on FormatException {
-      // Fall back to a generic status message below.
-    }
-
-    return 'GitHub API error (${response.statusCode}).';
-  }
-}
-
-class GithubApiException implements Exception {
-  const GithubApiException(this.message, {this.statusCode});
-
-  final String message;
-  final int? statusCode;
-
-  @override
-  String toString() => message;
 }

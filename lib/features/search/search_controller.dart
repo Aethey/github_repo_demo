@@ -2,16 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:github_repository_list_app/config/github_api_config.dart';
 import 'package:github_repository_list_app/repositories/github_repository.dart';
 import 'package:github_repository_list_app/models/repository_summary.dart';
 import 'package:github_repository_list_app/providers/repository_providers.dart';
 import 'package:github_repository_list_app/features/search/search_state.dart';
 
 class SearchController extends Notifier<SearchState> {
-  static const int _perPage = 30;
-  static const int _githubSearchResultLimit = 1000;
-
-
   int _activeRequestId = 0;
 
   GithubRepository get _githubRepository {
@@ -22,7 +19,6 @@ class SearchController extends Notifier<SearchState> {
   SearchState build() {
     return SearchState.home();
   }
-
 
   void inputChanged(String value) {
     final query = value.trim();
@@ -101,7 +97,7 @@ class SearchController extends Notifier<SearchState> {
       final result = await _githubRepository.searchRepositories(
         query: query,
         page: nextPage,
-        perPage: _perPage,
+        perPage: GithubApiConfig.defaultSearchPerPage,
       );
 
       if (!_isCurrentRequest(requestId, query)) {
@@ -156,7 +152,7 @@ class SearchController extends Notifier<SearchState> {
       final result = await _githubRepository.searchRepositories(
         query: query,
         page: 1,
-        perPage: _perPage,
+        perPage: GithubApiConfig.defaultSearchPerPage,
       );
 
       if (!_isCurrentRequest(requestId, query)) {
@@ -193,10 +189,11 @@ class SearchController extends Notifier<SearchState> {
     required int totalCount,
     required int lastPageItemCount,
   }) {
-    final accessibleTotal = totalCount > _githubSearchResultLimit
-        ? _githubSearchResultLimit
+    final accessibleTotal = totalCount > GithubApiConfig.searchResultLimit
+        ? GithubApiConfig.searchResultLimit
         : totalCount;
-    return lastPageItemCount == _perPage && loadedCount < accessibleTotal;
+    return lastPageItemCount == GithubApiConfig.defaultSearchPerPage &&
+        loadedCount < accessibleTotal;
   }
 
   String _friendlyMessage(Object error) {
