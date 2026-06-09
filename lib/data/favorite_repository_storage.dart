@@ -24,6 +24,8 @@ class FavoriteRepositoryStorage {
         }
       } on FormatException {
         // Ignore a corrupted entry so one bad item does not break the app.
+      } on TypeError {
+        // Ignore an incompatible entry from older or manually edited storage.
       }
     }
 

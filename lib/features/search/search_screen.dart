@@ -135,7 +135,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           ref.read(searchProvider.notifier).retry();
                         },
                         onRetryNextPage: () {
-                          ref.read(searchProvider.notifier).loadNextPage();
+                          ref
+                              .read(searchProvider.notifier)
+                              .loadNextPage(retryAfterError: true);
                         },
                         onRefreshSearch: () {
                           return ref.read(searchProvider.notifier).refresh();
