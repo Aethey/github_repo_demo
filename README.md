@@ -67,7 +67,6 @@ flutter test
 - Local favorite add/remove without GitHub Star API
 - Favorite state synchronization across Search, Detail, and Star screens
 - Favorites persist across app restart
-- Portrait-only screen orientation
 
 ### GitHub REST API
 
@@ -215,7 +214,6 @@ flutter test
 - GitHub Star API を使わないローカルお気に入り追加/削除
 - Search、Detail、Star 画面間のお気に入り状態同期
 - アプリ再起動後もお気に入りを保持
-- 縦画面固定
 
 ### GitHub REST API
 
