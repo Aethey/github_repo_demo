@@ -41,9 +41,9 @@ details, and managing local favorites.
 
 ### Packages
 
-- `http`: GitHub REST API requests
-- `shared_preferences`: local favorites and search history persistence
-- `flutter_riverpod`: state management and dependency injection
+- `http` `^1.6.0`: GitHub REST API requests
+- `shared_preferences` `^2.5.5`: local favorites and search history persistence
+- `flutter_riverpod` `^3.3.1`: state management and dependency injection
 
 No additional third-party packages are used.
 
@@ -188,9 +188,9 @@ The project includes unit and widget tests for:
 
 ### 使用パッケージ
 
-- `http`: GitHub REST API リクエスト
-- `shared_preferences`: お気に入りと検索履歴のローカル永続化
-- `flutter_riverpod`: 状態管理と依存性注入
+- `http` `^1.6.0`: GitHub REST API リクエスト
+- `shared_preferences` `^2.5.5`: お気に入りと検索履歴のローカル永続化
+- `flutter_riverpod` `^3.3.1`: 状態管理と依存性注入
 
 追加のサードパーティパッケージは使用していません。
 
