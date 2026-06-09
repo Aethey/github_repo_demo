@@ -78,12 +78,13 @@ class SearchController extends Notifier<SearchState> {
     await _searchFirstPage(query, requestId: requestId);
   }
 
-  Future<void> loadNextPage() async {
+  Future<void> loadNextPage({bool retryAfterError = false}) async {
     final current = state;
     if (current.status != SearchStatus.data ||
         current.isLoadingMore ||
         !current.hasMore ||
-        current.query.isEmpty) {
+        current.query.isEmpty ||
+        (current.nextPageErrorMessage != null && !retryAfterError)) {
       return;
     }
 

@@ -116,6 +116,85 @@ void main() {
       expect(state.isLoadingMore, isFalse);
     },
   );
+
+  test(
+    'SearchController retries next page only when retry is requested',
+    () async {
+      final githubRepository = _ControllableGithubRepository();
+      final container = ProviderContainer(
+        overrides: [
+          githubRepositoryProvider.overrideWithValue(githubRepository),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final controller = container.read(searchProvider.notifier);
+
+      controller.submit('flutter');
+      await _flush();
+
+      githubRepository.completeSearch(
+        query: 'flutter',
+        page: 1,
+        items: List<RepositorySummary>.generate(
+          30,
+          (index) => _summary(index + 1, 'owner/repo-${index + 1}'),
+        ),
+        totalCount: 60,
+      );
+      await _flush();
+
+      final failedNextPage = controller.loadNextPage();
+      await _flush();
+
+      githubRepository.failSearch(
+        query: 'flutter',
+        page: 2,
+        error: Exception('Next page failed.'),
+      );
+      await failedNextPage;
+      await _flush();
+
+      expect(container.read(searchProvider).nextPageErrorMessage, isNotNull);
+      expect(
+        githubRepository.searchRequests.where(
+          (request) => request.query == 'flutter' && request.page == 2,
+        ),
+        hasLength(1),
+      );
+
+      await controller.loadNextPage();
+      await _flush();
+
+      expect(
+        githubRepository.searchRequests.where(
+          (request) => request.query == 'flutter' && request.page == 2,
+        ),
+        hasLength(1),
+      );
+
+      final retryNextPage = controller.loadNextPage(retryAfterError: true);
+      await _flush();
+
+      expect(
+        githubRepository.searchRequests.where(
+          (request) => request.query == 'flutter' && request.page == 2,
+        ),
+        hasLength(2),
+      );
+
+      githubRepository.completeSearch(
+        query: 'flutter',
+        page: 2,
+        items: <RepositorySummary>[_summary(31, 'owner/repo-31')],
+        totalCount: 31,
+      );
+      await retryNextPage;
+      await _flush();
+
+      expect(container.read(searchProvider).nextPageErrorMessage, isNull);
+    },
+  );
 }
 
 RepositorySummary _summary(int id, String fullName) {
@@ -177,6 +256,19 @@ class _ControllableGithubRepository implements GithubRepository {
     completer.complete(
       RepositorySearchResult(items: items, totalCount: totalCount),
     );
+  }
+
+  void failSearch({
+    required String query,
+    required int page,
+    required Object error,
+  }) {
+    final completer = _pendingSearches.remove(_searchKey(query, page));
+    if (completer == null) {
+      fail('No pending search request for "$query" page $page.');
+    }
+
+    completer.completeError(error);
   }
 
   String _searchKey(String query, int page) {
