@@ -93,7 +93,6 @@ lib/
   main.dart
   app.dart
   navigation/
-    main_screen.dart
   config/
   models/
   network/
@@ -241,7 +240,6 @@ lib/
   main.dart
   app.dart
   navigation/
-    main_screen.dart
   config/
   models/
   network/
